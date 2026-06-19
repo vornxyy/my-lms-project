@@ -1,0 +1,17 @@
+// prisma/schema.prisma
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model LabTrackingLog {
+  id         String   @id @default(uuid())
+  sampleName String
+  status     String
+  operator   String
+  createdAt  DateTime @default(now())
+}

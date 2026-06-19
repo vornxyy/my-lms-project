@@ -1,0 +1,1033 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LMS — System Workspace (Redesign)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg-base:#0A0D12;
+    --bg-surface:#12161D;
+    --bg-elevated:#1A1F28;
+    --bg-elevated-hover:#1F252F;
+    --hairline:#232936;
+    --text-primary:#E8EAEE;
+    --text-muted:#8D96A6;
+    --text-faint:#5B6473;
+    --accent-teal:#4FD8C4;
+    --accent-violet:#8B93F8;
+    --accent-amber:#F2A65A;
+    --accent-green:#5BD88A;
+    --accent-red:#F2685A;
+    --radius:10px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg-base);
+    color:var(--text-primary);
+    font-family:'Inter',system-ui,sans-serif;
+    min-height:100vh;
+    display:flex;
+  }
+  ::selection{background:var(--accent-teal);color:#06120F;}
+  a,button,input,select{font-family:inherit;}
+  :focus-visible{outline:2px solid var(--accent-teal);outline-offset:2px;border-radius:4px;}
+
+  /* ---------- Sidebar ---------- */
+  .sidebar{
+    width:248px;flex-shrink:0;background:var(--bg-surface);
+    border-right:1px solid var(--hairline);display:flex;flex-direction:column;
+    padding:20px 14px;min-height:100vh;position:sticky;top:0;
+  }
+  .brand{display:flex;align-items:center;gap:10px;padding:6px 8px 18px;}
+  .brand-mark{
+    width:34px;height:34px;border-radius:9px;
+    background:linear-gradient(135deg,var(--accent-teal),var(--accent-violet));
+    display:flex;align-items:center;justify-content:center;
+    font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:14px;color:#06120F;
+  }
+  .brand-text{display:flex;flex-direction:column;line-height:1.15;}
+  .brand-text .name{font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:15px;}
+  .brand-text .sub{font-size:11px;letter-spacing:.08em;color:var(--accent-teal);font-weight:600;}
+
+  nav{display:flex;flex-direction:column;gap:2px;margin-top:4px;}
+  .nav-item{
+    display:flex;align-items:center;gap:11px;padding:9px 12px;border-radius:8px;
+    color:var(--text-muted);font-size:14px;font-weight:500;cursor:pointer;
+    transition:background .15s,color .15s;border:1px solid transparent;background:none;
+    width:100%;text-align:left;
+  }
+  .nav-item svg{width:17px;height:17px;flex-shrink:0;}
+  .nav-item:hover{background:var(--bg-elevated);color:var(--text-primary);}
+  .nav-item.active{background:var(--bg-elevated);color:var(--text-primary);border-color:var(--hairline);}
+  .nav-item.active svg{color:var(--accent-teal);}
+
+  .sidebar-footer{
+    margin-top:auto;border-top:1px solid var(--hairline);padding-top:14px;display:flex;align-items:center;gap:10px;
+    background:none;border-left:none;border-right:none;border-bottom:none;width:100%;cursor:pointer;
+    text-align:left;border-radius:8px;transition:background .15s;
+  }
+  .sidebar-footer:hover{background:var(--bg-elevated);}
+  .avatar{
+    width:34px;height:34px;border-radius:50%;background:var(--bg-elevated);border:1px solid var(--hairline);
+    display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;
+    font-size:12px;color:var(--accent-teal);font-weight:500;flex-shrink:0;
+  }
+  .user-meta{display:flex;flex-direction:column;line-height:1.3;flex:1;}
+  .user-meta .uname{font-size:12.5px;color:var(--text-primary);}
+  .role-badge{
+    font-size:10px;font-weight:600;letter-spacing:.04em;color:var(--accent-green);
+    background:rgba(91,216,138,.12);padding:1px 7px;border-radius:20px;display:inline-block;
+    margin-top:2px;width:fit-content;
+  }
+  .footer-chevron{width:14px;height:14px;color:var(--text-faint);flex-shrink:0;}
+
+  /* ---------- Profile modal ---------- */
+  .modal-overlay{
+    position:fixed;inset:0;background:rgba(5,7,10,.65);backdrop-filter:blur(2px);
+    display:none;align-items:flex-end;justify-content:flex-start;z-index:100;padding:20px;
+  }
+  .modal-overlay.active{display:flex;}
+  .modal-panel{
+    background:var(--bg-surface);border:1px solid var(--hairline);border-radius:14px;
+    width:420px;max-height:min(640px,calc(100vh - 40px));overflow-y:auto;
+    margin-left:14px;margin-bottom:64px;
+    animation:modalRise .2s ease;box-shadow:0 20px 50px rgba(0,0,0,.45);
+  }
+  @keyframes modalRise{from{opacity:0;transform:translateY(8px) scale(.98);}to{opacity:1;transform:translateY(0) scale(1);}}
+  .modal-header{display:flex;align-items:center;gap:12px;padding:18px 18px 16px;border-bottom:1px solid var(--hairline);}
+  .modal-avatar{
+    width:42px;height:42px;border-radius:50%;background:var(--bg-elevated);border:1px solid var(--hairline);
+    display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;
+    font-size:14px;color:var(--accent-teal);font-weight:500;flex-shrink:0;
+  }
+  .modal-header-meta{flex:1;}
+  .modal-header-meta .mname{font-size:14px;font-weight:600;color:var(--text-primary);}
+  .modal-header-meta .memail{font-size:12px;color:var(--text-muted);}
+  .modal-close{background:none;border:none;color:var(--text-faint);cursor:pointer;padding:6px;border-radius:7px;display:flex;}
+  .modal-close:hover{background:var(--bg-elevated);color:var(--text-primary);}
+  .modal-close svg{width:16px;height:16px;}
+  .modal-body{padding:8px 10px;}
+  .modal-section{padding:14px 12px;border-bottom:1px solid var(--hairline);}
+  .modal-section:last-child{border-bottom:none;}
+  .modal-section h4{font-family:'Space Grotesk',sans-serif;font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--text-faint);margin:0 0 10px;padding:0 4px;}
+  .modal-row{display:flex;justify-content:space-between;align-items:center;padding:8px 4px;border-radius:7px;}
+  .modal-row:hover{background:var(--bg-elevated);}
+  .modal-row-text strong{font-size:13px;font-weight:500;display:block;}
+  .modal-row-text p{font-size:11.5px;color:var(--text-muted);margin:2px 0 0;}
+  .modal-logout{
+    width:100%;display:flex;align-items:center;gap:10px;padding:10px 12px;margin-top:4px;
+    background:none;border:none;color:var(--accent-red);font-size:13px;font-weight:500;
+    cursor:pointer;border-radius:7px;text-align:left;
+  }
+  .modal-logout:hover{background:rgba(242,104,90,.1);}
+  .modal-logout svg{width:15px;height:15px;}
+
+  /* ---------- Centered modal variant (patient detail) ---------- */
+  .modal-overlay.center{align-items:center;justify-content:center;}
+  .modal-overlay.center .modal-panel{margin:0;width:460px;max-height:min(600px,calc(100vh - 40px));}
+
+  /* ---------- Dashboard: two-column widget row ---------- */
+  .dash-grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:18px;}
+
+  .attention-row{display:flex;align-items:center;gap:12px;padding:11px 4px;border-bottom:1px solid var(--hairline);}
+  .attention-row:last-child{border-bottom:none;}
+  .attention-icon{width:30px;height:30px;border-radius:8px;background:rgba(242,166,90,.12);color:var(--accent-amber);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .attention-icon svg{width:15px;height:15px;}
+  .attention-text{flex:1;}
+  .attention-text strong{font-size:13px;font-weight:500;display:block;}
+  .attention-text p{font-size:11.5px;color:var(--text-muted);margin:2px 0 0;}
+  .empty-state{display:flex;flex-direction:column;align-items:center;text-align:center;padding:24px 10px;color:var(--text-faint);}
+  .empty-state svg{width:28px;height:28px;color:var(--accent-green);margin-bottom:8px;}
+  .empty-state p{font-size:12.5px;margin:0;}
+
+  /* ---------- Activity feed ---------- */
+  .activity-feed{list-style:none;margin:0;padding:0;}
+  .activity-item{display:flex;gap:12px;padding-bottom:18px;position:relative;}
+  .activity-item:last-child{padding-bottom:0;}
+  .activity-line{position:absolute;left:14px;top:30px;bottom:-2px;width:1px;background:var(--hairline);}
+  .activity-item:last-child .activity-line{display:none;}
+  .activity-icon{width:29px;height:29px;border-radius:50%;background:var(--bg-elevated);border:1px solid var(--hairline);display:flex;align-items:center;justify-content:center;flex-shrink:0;z-index:1;}
+  .activity-icon svg{width:13px;height:13px;}
+  .activity-text{font-size:13px;color:var(--text-primary);padding-top:3px;}
+  .activity-time{font-size:11.5px;color:var(--text-faint);margin-top:2px;}
+
+  /* ---------- Patients: filter chips & tags ---------- */
+  .filter-chips{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;}
+  .filter-chip{background:var(--bg-elevated);border:1px solid var(--hairline);color:var(--text-muted);font-size:12.5px;font-weight:500;padding:7px 14px;border-radius:20px;cursor:pointer;transition:border-color .12s,color .12s,background .12s;}
+  .filter-chip:hover{color:var(--text-primary);}
+  .filter-chip.active{background:var(--accent-teal);color:#06120F;border-color:var(--accent-teal);}
+  tbody tr.clickable-row{cursor:pointer;}
+  .tag-pill{display:inline-flex;align-items:center;font-size:11px;font-weight:500;padding:3px 9px;border-radius:20px;margin:2px 3px 2px 0;}
+  .tag-followup{background:rgba(242,166,90,.12);color:var(--accent-amber);}
+  .tag-routine{background:rgba(79,216,196,.12);color:var(--accent-teal);}
+  .tag-inactive{background:rgba(141,150,166,.12);color:var(--text-muted);}
+
+  /* ---------- Patient detail modal body ---------- */
+  .patient-modal-history{padding:4px 14px 14px;}
+  .history-row{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--hairline);font-size:13px;}
+  .history-row:last-child{border-bottom:none;}
+
+  /* ---------- Analytics: range toggle ---------- */
+  .range-toggle{display:flex;background:var(--bg-elevated);border:1px solid var(--hairline);border-radius:20px;padding:3px;gap:2px;}
+  .range-btn{background:none;border:none;color:var(--text-muted);font-size:12px;font-weight:600;padding:6px 14px;border-radius:16px;cursor:pointer;transition:background .15s,color .15s;}
+  .range-btn:hover{color:var(--text-primary);}
+  .range-btn.active{background:var(--accent-teal);color:#06120F;}
+
+  /* ---------- Main / Pages ---------- */
+  main{flex:1;padding:34px 40px;max-width:1180px;}
+  .page{display:none;}
+  .page.active{display:block;animation:fadeIn .25s ease;}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:translateY(0);}}
+
+  .panel-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:26px;gap:20px;flex-wrap:wrap;}
+  h1{font-family:'Space Grotesk',sans-serif;font-size:26px;font-weight:600;margin:0 0 5px;letter-spacing:-.01em;}
+  .page-sub{color:var(--text-muted);font-size:13.5px;margin:0;}
+  .head-actions{display:flex;align-items:center;gap:14px;}
+
+  .live-badge{
+    display:flex;align-items:center;gap:7px;font-size:12px;font-weight:600;color:var(--accent-green);
+    border:1px solid rgba(91,216,138,.3);background:rgba(91,216,138,.08);padding:6px 11px;border-radius:20px;
+  }
+  .pulse-dot{width:7px;height:7px;border-radius:50%;background:var(--accent-green);position:relative;}
+  .pulse-dot::after{content:'';position:absolute;inset:0;border-radius:50%;background:var(--accent-green);animation:pulse 1.8s ease-out infinite;}
+  @keyframes pulse{0%{transform:scale(1);opacity:.7;}100%{transform:scale(2.8);opacity:0;}}
+
+  .range-pill{font-size:12px;color:var(--text-muted);background:var(--bg-elevated);border:1px solid var(--hairline);padding:6px 12px;border-radius:20px;}
+
+  .btn-primary{
+    display:flex;align-items:center;gap:7px;background:var(--accent-teal);color:#06120F;border:none;
+    font-size:13.5px;font-weight:600;padding:9px 16px;border-radius:8px;cursor:pointer;
+    transition:transform .12s,filter .12s;
+  }
+  .btn-primary:hover{filter:brightness(1.08);transform:translateY(-1px);}
+  .btn-primary svg{width:15px;height:15px;}
+
+  /* ---------- Stat cards ---------- */
+  .stats-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:24px;}
+  .stat-card{
+    background:var(--bg-surface);border:1px solid var(--hairline);border-radius:var(--radius);
+    padding:20px 20px 18px;position:relative;overflow:hidden;
+    opacity:0;transform:translateY(10px);animation:rise .5s ease forwards;
+  }
+  .stat-card:nth-child(1){animation-delay:.03s;}
+  .stat-card:nth-child(2){animation-delay:.10s;}
+  .stat-card:nth-child(3){animation-delay:.17s;}
+  @keyframes rise{to{opacity:1;transform:translateY(0);}}
+  .stat-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;}
+  .stat-card.c-teal::before{background:var(--accent-teal);}
+  .stat-card.c-violet::before{background:var(--accent-violet);}
+  .stat-card.c-amber::before{background:var(--accent-amber);}
+  .stat-card.c-green::before{background:var(--accent-green);}
+  .stat-icon{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;margin-bottom:14px;}
+  .c-teal .stat-icon{background:rgba(79,216,196,.12);color:var(--accent-teal);}
+  .c-violet .stat-icon{background:rgba(139,147,248,.12);color:var(--accent-violet);}
+  .c-amber .stat-icon{background:rgba(242,166,90,.12);color:var(--accent-amber);}
+  .c-green .stat-icon{background:rgba(91,216,138,.12);color:var(--accent-green);}
+  .stat-icon svg{width:17px;height:17px;}
+  .stat-label{font-size:11.5px;font-weight:600;letter-spacing:.06em;color:var(--text-muted);text-transform:uppercase;margin-bottom:8px;}
+  .stat-value{font-family:'JetBrains Mono',monospace;font-size:30px;font-weight:500;letter-spacing:-.01em;}
+  .stat-value.empty{font-family:'Inter',sans-serif;font-size:15px;color:var(--text-faint);font-weight:500;}
+  .stat-foot{font-size:11.5px;color:var(--text-faint);margin-top:6px;}
+
+  /* ---------- Card / Table shared ---------- */
+  .table-card{background:var(--bg-surface);border:1px solid var(--hairline);border-radius:var(--radius);overflow:hidden;margin-bottom:18px;}
+  .table-head{display:flex;justify-content:space-between;align-items:center;padding:18px 20px;border-bottom:1px solid var(--hairline);gap:16px;flex-wrap:wrap;}
+  .table-head h2{font-family:'Space Grotesk',sans-serif;font-size:15.5px;font-weight:600;margin:0;}
+  .table-controls{display:flex;align-items:center;gap:10px;}
+  .search-wrap{position:relative;}
+  .search-wrap svg{position:absolute;left:11px;top:50%;transform:translateY(-50%);width:15px;height:15px;color:var(--text-faint);}
+  .search-wrap input{background:var(--bg-elevated);border:1px solid var(--hairline);border-radius:7px;padding:8px 12px 8px 32px;font-size:13px;color:var(--text-primary);width:220px;}
+  .search-wrap input::placeholder{color:var(--text-faint);}
+  .entry-count{font-size:12px;color:var(--text-faint);background:var(--bg-elevated);border:1px solid var(--hairline);padding:5px 10px;border-radius:20px;white-space:nowrap;}
+
+  table{width:100%;border-collapse:collapse;}
+  thead th{text-align:left;font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--text-faint);padding:12px 20px;border-bottom:1px solid var(--hairline);}
+  tbody td{padding:14px 20px;font-size:13.5px;border-bottom:1px solid var(--hairline);vertical-align:middle;}
+  tbody tr:last-child td{border-bottom:none;}
+  tbody tr{transition:background .12s;}
+  tbody tr:hover{background:var(--bg-elevated);}
+
+  .id-cell{display:flex;align-items:center;gap:8px;}
+  .id-code{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--text-muted);}
+  .copy-btn{background:none;border:none;color:var(--text-faint);cursor:pointer;padding:3px;display:flex;border-radius:4px;opacity:0;transition:opacity .12s,color .12s;}
+  tr:hover .copy-btn{opacity:1;}
+  .copy-btn:hover{color:var(--accent-teal);}
+  .copy-btn svg{width:13px;height:13px;}
+
+  .patient-linked{display:flex;align-items:center;gap:6px;color:var(--text-primary);}
+  .patient-linked svg{width:13px;height:13px;color:var(--accent-teal);}
+  .patient-unlinked{display:flex;align-items:center;gap:6px;color:var(--text-faint);font-size:12.5px;}
+  .patient-unlinked svg{width:13px;height:13px;}
+
+  .operator-cell{display:flex;align-items:center;gap:8px;}
+  .op-avatar{width:24px;height:24px;border-radius:50%;background:var(--bg-elevated);border:1px solid var(--hairline);display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text-muted);flex-shrink:0;}
+
+  .status-pill{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:500;padding:4px 10px;border-radius:20px;}
+  .status-pill svg{width:13px;height:13px;}
+  .status-pending{background:rgba(242,166,90,.12);color:var(--accent-amber);}
+  .status-progress{background:rgba(139,147,248,.12);color:var(--accent-violet);}
+  .status-complete{background:rgba(91,216,138,.12);color:var(--accent-green);}
+  .status-active{background:rgba(91,216,138,.12);color:var(--accent-green);}
+  .status-inactive{background:rgba(141,150,166,.12);color:var(--text-muted);}
+
+  .date-cell{color:var(--text-muted);}
+
+  /* ---------- Panel cards (settings / analytics) ---------- */
+  .panel-card{background:var(--bg-surface);border:1px solid var(--hairline);border-radius:var(--radius);padding:22px 24px;margin-bottom:18px;}
+  .panel-card h3{font-family:'Space Grotesk',sans-serif;font-size:15px;font-weight:600;margin:0 0 4px;}
+  .panel-card .panel-sub{font-size:12px;color:var(--text-muted);margin:0 0 18px;}
+  .charts-grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+
+  /* bar chart */
+  .bar-row{display:flex;align-items:center;gap:12px;margin-bottom:14px;}
+  .bar-row:last-child{margin-bottom:0;}
+  .bar-label{width:100px;font-size:12.5px;color:var(--text-muted);flex-shrink:0;}
+  .bar-track{flex:1;height:10px;background:var(--bg-elevated);border-radius:6px;overflow:hidden;}
+  .bar-fill{height:100%;border-radius:6px;width:0;transition:width .6s ease;}
+  .bar-count{width:26px;text-align:right;font-family:'JetBrains Mono',monospace;font-size:12.5px;color:var(--text-primary);}
+
+  /* donut chart */
+  .donut-wrap{display:flex;align-items:center;gap:26px;flex-wrap:wrap;}
+  .donut{width:128px;height:128px;border-radius:50%;flex-shrink:0;position:relative;}
+  .donut::after{content:'';position:absolute;inset:22px;border-radius:50%;background:var(--bg-surface);}
+  .donut-legend{display:flex;flex-direction:column;gap:9px;}
+  .legend-item{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--text-muted);}
+  .legend-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;}
+  .legend-item strong{color:var(--text-primary);font-family:'JetBrains Mono',monospace;margin-left:14px;}
+
+  /* line chart */
+  .line-chart-wrap{width:100%;}
+  .line-chart-wrap svg{width:100%;height:auto;display:block;}
+  .axis-label{font-size:10.5px;fill:var(--text-faint);font-family:'Inter',sans-serif;}
+
+  /* settings */
+  .setting-row{display:flex;justify-content:space-between;align-items:center;padding:14px 0;border-bottom:1px solid var(--hairline);gap:20px;}
+  .setting-row:last-child{border-bottom:none;padding-bottom:0;}
+  .setting-row-text strong{font-size:13.5px;font-weight:500;display:block;}
+  .setting-row-text p{font-size:12px;color:var(--text-muted);margin:3px 0 0;}
+
+  .toggle{position:relative;width:38px;height:22px;flex-shrink:0;display:inline-block;}
+  .toggle input{opacity:0;width:0;height:0;position:absolute;}
+  .toggle .track{position:absolute;inset:0;background:var(--bg-elevated);border:1px solid var(--hairline);border-radius:20px;transition:background .15s,border-color .15s;}
+  .toggle .knob{position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:var(--text-muted);transition:transform .15s,background .15s;}
+  .toggle input:checked ~ .track{background:rgba(79,216,196,.2);border-color:var(--accent-teal);}
+  .toggle input:checked ~ .track .knob{transform:translateX(16px);background:var(--accent-teal);}
+  .toggle input:focus-visible ~ .track{outline:2px solid var(--accent-teal);outline-offset:2px;}
+
+  .field{display:flex;flex-direction:column;gap:6px;margin-bottom:16px;}
+  .field label{font-size:12px;color:var(--text-muted);font-weight:500;}
+  .field input,.field select{background:var(--bg-elevated);border:1px solid var(--hairline);border-radius:7px;padding:9px 12px;font-size:13.5px;color:var(--text-primary);width:100%;}
+  .field-row{display:flex;gap:16px;}
+  .field-row .field{flex:1;}
+
+  .team-row{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--hairline);}
+  .team-row:last-child{border-bottom:none;}
+  .team-meta{flex:1;}
+  .team-meta .tname{font-size:13.5px;font-weight:500;}
+  .team-meta .trole{font-size:12px;color:var(--text-muted);}
+  .btn-ghost{background:none;border:1px solid var(--hairline);color:var(--text-muted);font-size:12.5px;padding:6px 12px;border-radius:7px;cursor:pointer;transition:border-color .12s,color .12s;}
+  .btn-ghost:hover{border-color:var(--accent-teal);color:var(--accent-teal);}
+
+  @media (prefers-reduced-motion: reduce){
+    .stat-card{animation:none;opacity:1;transform:none;}
+    .page.active{animation:none;}
+    .pulse-dot::after{animation:none;display:none;}
+    .bar-fill{transition:none;}
+    *{transition:none !important;}
+  }
+
+  @media (max-width:900px){
+    .stats-grid,.charts-grid-2{grid-template-columns:1fr;}
+  }
+</style>
+</head>
+<body>
+
+<aside class="sidebar">
+  <div class="brand">
+    <div class="brand-mark">LM</div>
+    <div class="brand-text">
+      <span class="name">LMS</span>
+      <span class="sub">LMS CORE</span>
+    </div>
+  </div>
+  <nav>
+    <button class="nav-item active" data-page="dashboard" onclick="switchPage('dashboard')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
+      Dashboard
+    </button>
+    <button class="nav-item" data-page="patients" onclick="switchPage('patients')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 20c0-3.3 2.5-5.5 5.5-5.5s5.5 2.2 5.5 5.5"/><circle cx="17.5" cy="9.5" r="2.3"/><path d="M15.2 14.3c2.5.2 4.3 2 4.3 5"/></svg>
+      Records &amp; Patients
+    </button>
+    <button class="nav-item" data-page="analytics" onclick="switchPage('analytics')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 19V10M11 19V5M18 19v-7"/></svg>
+      Analytics Stream
+    </button>
+  </nav>
+  <button class="sidebar-footer" onclick="openProfileModal()" aria-haspopup="dialog">
+    <div class="avatar">VX</div>
+    <div class="user-meta">
+      <span class="uname">vornxy@fedora</span>
+      <span class="role-badge">Root Admin</span>
+    </div>
+    <svg class="footer-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+  </button>
+</aside>
+
+<main>
+
+  <!-- ===================== DASHBOARD ===================== -->
+  <div class="page active" data-page="dashboard">
+    <header class="panel-head">
+      <div>
+        <h1>System Workspace</h1>
+        <p class="page-sub">LMS Core — operational overview and compliance tracking</p>
+      </div>
+      <div class="head-actions">
+        <button class="btn-primary">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+          New Record
+        </button>
+        <div class="live-badge"><span class="pulse-dot"></span>LIVE</div>
+      </div>
+    </header>
+
+    <section class="stats-grid">
+      <div class="stat-card c-teal">
+        <div class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M9 2v6.5L4.5 16a2.5 2.5 0 0 0 2.1 3.9h10.8a2.5 2.5 0 0 0 2.1-3.9L15 8.5V2"/><path d="M8.5 14h7"/><path d="M7 2h10"/></svg></div>
+        <div class="stat-label">Total Registered Records</div>
+        <div class="stat-value" id="stat-total">5</div>
+        <div class="stat-foot">All sample types, all time</div>
+      </div>
+      <div class="stat-card c-violet">
+        <div class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 12h4l2-6 4 12 2-6h6"/></svg></div>
+        <div class="stat-label">Open Cases</div>
+        <div class="stat-value" id="stat-open">4</div>
+        <div class="stat-foot">Pending or in progress</div>
+      </div>
+      <div class="stat-card c-amber">
+        <div class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 3 4 6.5v5C4 16.5 7.5 20 12 21c4.5-1 8-4.5 8-9.5v-5z"/><path d="M9 12l2 2 4-4"/></svg></div>
+        <div class="stat-label">Compliance Rate</div>
+        <div class="stat-value" id="stat-compliance">20.0%</div>
+        <div class="stat-foot" id="compliance-foot">1 of 5 records completed</div>
+      </div>
+    </section>
+
+    <section class="dash-grid-2">
+      <div class="panel-card">
+        <h3>Needs Attention</h3>
+        <p class="panel-sub">Pending samples older than 24 hours</p>
+        <div id="attention-list"></div>
+      </div>
+      <div class="panel-card">
+        <h3>Workload by Operator</h3>
+        <p class="panel-sub">Open cases currently assigned</p>
+        <div id="workload-bars"></div>
+      </div>
+    </section>
+
+    <div class="panel-card">
+      <h3>Recent Activity</h3>
+      <p class="panel-sub">Latest changes across all records</p>
+      <ul class="activity-feed" id="activity-feed"></ul>
+    </div>
+
+    <section class="table-card">
+      <div class="table-head">
+        <h2>Recent Operational Records</h2>
+        <div class="table-controls">
+          <div class="search-wrap">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+            <input id="search-records" type="text" placeholder="Search records...">
+          </div>
+          <span class="entry-count" id="entry-count">5 entries</span>
+        </div>
+      </div>
+      <table>
+        <thead><tr><th>ID Code</th><th>Sample Name</th><th>Patient</th><th>Operator</th><th>Status</th><th>Date</th></tr></thead>
+        <tbody id="records-body"></tbody>
+      </table>
+    </section>
+  </div>
+
+  <!-- ===================== PATIENTS ===================== -->
+  <div class="page" data-page="patients">
+    <header class="panel-head">
+      <div>
+        <h1>Records &amp; Patients</h1>
+        <p class="page-sub">Patient directory and sample linkage</p>
+      </div>
+      <div class="head-actions">
+        <button class="btn-primary">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+          Add Patient
+        </button>
+      </div>
+    </header>
+
+    <section class="stats-grid">
+      <div class="stat-card c-teal">
+        <div class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 20c0-3.3 2.5-5.5 5.5-5.5s5.5 2.2 5.5 5.5"/><circle cx="17.5" cy="9.5" r="2.3"/><path d="M15.2 14.3c2.5.2 4.3 2 4.3 5"/></svg></div>
+        <div class="stat-label">Total Patients</div>
+        <div class="stat-value" id="stat-total-patients">3</div>
+        <div class="stat-foot">Registered profiles</div>
+      </div>
+      <div class="stat-card c-green">
+        <div class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M10 13a5 5 0 0 0 7.5.4l2-2a5 5 0 0 0-7-7l-1.2 1.1"/><path d="M14 11a5 5 0 0 0-7.5-.4l-2 2a5 5 0 0 0 7 7l1.1-1.2"/></svg></div>
+        <div class="stat-label">Linked Records</div>
+        <div class="stat-value" id="stat-linked">1</div>
+        <div class="stat-foot">Records tied to a patient profile</div>
+      </div>
+      <div class="stat-card c-amber">
+        <div class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M5 12h14"/></svg></div>
+        <div class="stat-label">Unlinked Records</div>
+        <div class="stat-value" id="stat-unlinked">4</div>
+        <div class="stat-foot">Needs a patient assigned</div>
+      </div>
+    </section>
+
+    <div class="filter-chips" id="patient-filters">
+      <button class="filter-chip active" data-filter="all">All</button>
+      <button class="filter-chip" data-filter="active">Active</button>
+      <button class="filter-chip" data-filter="inactive">Inactive</button>
+      <button class="filter-chip" data-filter="unlinked">No Records Yet</button>
+    </div>
+
+    <section class="table-card">
+      <div class="table-head">
+        <h2>Patient Directory</h2>
+        <div class="table-controls">
+          <div class="search-wrap">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+            <input id="search-patients" type="text" placeholder="Search patients...">
+          </div>
+          <span class="entry-count" id="patient-count">3 entries</span>
+        </div>
+      </div>
+      <table>
+        <thead><tr><th>Patient</th><th>Patient ID</th><th>Tags</th><th>Linked Records</th><th>Last Sample</th><th>Status</th></tr></thead>
+        <tbody id="patients-body"></tbody>
+      </table>
+    </section>
+  </div>
+
+  <!-- ===================== ANALYTICS ===================== -->
+  <div class="page" data-page="analytics">
+    <header class="panel-head">
+      <div>
+        <h1>Analytics Stream</h1>
+        <p class="page-sub">Performance trends and compliance over time</p>
+      </div>
+      <div class="head-actions">
+        <div class="range-toggle" id="range-toggle">
+          <button class="range-btn active" data-range="7">7D</button>
+          <button class="range-btn" data-range="30">30D</button>
+          <button class="range-btn" data-range="90">90D</button>
+        </div>
+      </div>
+    </header>
+
+    <section class="stats-grid">
+      <div class="stat-card c-teal">
+        <div class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div>
+        <div class="stat-label">Avg Turnaround</div>
+        <div class="stat-value" id="an-turnaround">1.8<span style="font-size:15px;color:var(--text-muted);"> days</span></div>
+        <div class="stat-foot" id="an-turnaround-foot">Receipt to result, last 7 days</div>
+      </div>
+      <div class="stat-card c-violet">
+        <div class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M9 2v6.5L4.5 16a2.5 2.5 0 0 0 2.1 3.9h10.8a2.5 2.5 0 0 0 2.1-3.9L15 8.5V2"/></svg></div>
+        <div class="stat-label" id="an-records-label">Records This Period</div>
+        <div class="stat-value" id="an-records">5</div>
+        <div class="stat-foot">Across all sample types</div>
+      </div>
+      <div class="stat-card c-amber">
+        <div class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 3 4 6.5v5C4 16.5 7.5 20 12 21c4.5-1 8-4.5 8-9.5v-5z"/><path d="M9 12l2 2 4-4"/></svg></div>
+        <div class="stat-label">Compliance Rate</div>
+        <div class="stat-value" id="an-compliance">20.0%</div>
+        <div class="stat-foot" id="an-compliance-foot">1 of 5 records completed</div>
+      </div>
+    </section>
+
+    <div class="panel-card">
+      <h3 id="an-activity-title">Activity — Last 7 Days</h3>
+      <p class="panel-sub">Records logged per period</p>
+      <div class="line-chart-wrap" id="activity-chart"></div>
+    </div>
+
+    <div class="panel-card">
+      <h3>Turnaround Time Trend</h3>
+      <p class="panel-sub">Average days from receipt to result</p>
+      <div class="line-chart-wrap" id="turnaround-chart"></div>
+    </div>
+
+    <div class="charts-grid-2">
+      <div class="panel-card">
+        <h3>Records by Status</h3>
+        <p class="panel-sub">Current operational records</p>
+        <div id="bar-chart"></div>
+      </div>
+      <div class="panel-card">
+        <h3>Sample Type Breakdown</h3>
+        <p class="panel-sub">Share of total registered records</p>
+        <div class="donut-wrap">
+          <div class="donut" id="donut"></div>
+          <div class="donut-legend" id="donut-legend"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel-card">
+      <h3>Operator Comparison</h3>
+      <p class="panel-sub">Records handled per operator</p>
+      <div id="operator-bars"></div>
+    </div>
+  </div>
+
+  <!-- (Settings now lives inside the profile modal — see below) -->
+
+</main>
+
+<!-- ===================== PROFILE MODAL ===================== -->
+<div class="modal-overlay" id="profile-modal" onclick="if(event.target===this) closeProfileModal()">
+  <div class="modal-panel" role="dialog" aria-modal="true" aria-label="Profile and settings">
+    <div class="modal-header">
+      <div class="modal-avatar">VX</div>
+      <div class="modal-header-meta">
+        <div class="mname">vornxy@fedora</div>
+        <div class="memail">Root Admin · LMS Core Diagnostics</div>
+      </div>
+      <button class="modal-close" onclick="closeProfileModal()" aria-label="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+
+    <div class="modal-body">
+      <div class="modal-section">
+        <h4>Notifications</h4>
+        <div class="setting-row" style="padding:8px 4px;">
+          <div class="setting-row-text"><strong>Pending sample alerts</strong><p>Email when a sample is pending over 24h</p></div>
+          <label class="toggle"><input type="checkbox" checked><span class="track"><span class="knob"></span></span></label>
+        </div>
+        <div class="setting-row" style="padding:8px 4px;">
+          <div class="setting-row-text"><strong>Daily summary report</strong><p>End-of-day digest of record activity</p></div>
+          <label class="toggle"><input type="checkbox" checked><span class="track"><span class="knob"></span></span></label>
+        </div>
+        <div class="setting-row" style="padding:8px 4px;border-bottom:none;">
+          <div class="setting-row-text"><strong>Critical result alerts</strong><p>Immediate alert for flagged critical results</p></div>
+          <label class="toggle"><input type="checkbox"><span class="track"><span class="knob"></span></span></label>
+        </div>
+      </div>
+
+      <div class="modal-section">
+        <h4>Workspace</h4>
+        <div class="field"><label>Lab Name</label><input type="text" value="LMS Core Diagnostics"></div>
+        <div class="field" style="margin-bottom:0;"><label>Compliance Threshold (%)</label><input type="number" value="95"></div>
+      </div>
+
+      <div class="modal-section">
+        <h4>Team &amp; Access</h4>
+        <div class="modal-row"><div class="modal-row-text"><strong>Mark Rivera</strong><p>Lab Technician</p></div><button class="btn-ghost">Manage</button></div>
+        <div class="modal-row"><div class="modal-row-text"><strong>Dr. Sarah Chen</strong><p>Pathologist</p></div><button class="btn-ghost">Manage</button></div>
+        <div class="modal-row"><div class="modal-row-text"><strong>Lisa Park</strong><p>Lab Technician</p></div><button class="btn-ghost">Manage</button></div>
+      </div>
+
+      <div class="modal-section" style="display:flex;flex-direction:column;gap:6px;">
+        <button class="btn-primary" style="width:100%;justify-content:center;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg>
+          Save Changes
+        </button>
+        <button class="modal-logout">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg>
+          Log out
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== PATIENT DETAIL MODAL ===================== -->
+<div class="modal-overlay center" id="patient-modal" onclick="if(event.target===this) closePatientModal()">
+  <div class="modal-panel" role="dialog" aria-modal="true" aria-label="Patient detail">
+    <div class="modal-header">
+      <div class="modal-avatar" id="pm-avatar">JD</div>
+      <div class="modal-header-meta">
+        <div class="mname" id="pm-name">John Doe</div>
+        <div class="memail" id="pm-id">PT-1042</div>
+      </div>
+      <button class="modal-close" onclick="closePatientModal()" aria-label="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="modal-section" id="pm-tags-wrap">
+      <h4>Tags</h4>
+      <div id="pm-tags"></div>
+    </div>
+    <div class="modal-section">
+      <h4>Sample History</h4>
+      <div class="patient-modal-history" id="pm-history" style="padding:0;"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ---------------- Data ---------------- */
+const records = [
+  {id:"f8bcdbfc-2aa2-4d65-bda9-94ef4942ac08", sample:"Urine Culture", patient:null, operator:"Mark Rivera", status:"pending", date:"Jun 17, 2026"},
+  {id:"48832721-b4d5-4849-a07d-a6c92cd1ab30", sample:"Tissue Biopsy", patient:null, operator:"Dr. Sarah Chen", status:"pending", date:"Jun 16, 2026"},
+  {id:"114a3c2f-95e4-4869-8546-bb834802d1ae", sample:"Blood Panel", patient:null, operator:"Mark Rivera", status:"pending", date:"Jun 16, 2026"},
+  {id:"b3795ab7-c762-4a05-b884-5a9b15eefbb0", sample:"Tissue Biopsy", patient:null, operator:"Lisa Park", status:"progress", date:"Jun 16, 2026"},
+  {id:"a3f91d44-7c11-4d2e-9a02-1f5e8b6c0d77", sample:"Lipid Panel", patient:"John Doe", operator:"Lisa Park", status:"complete", date:"Jun 15, 2026"},
+];
+
+const patients = [
+  {name:"John Doe", patientId:"PT-1042", records:1, lastSample:"Jun 15, 2026", status:"active", tags:["routine"]},
+  {name:"Maria Lopez", patientId:"PT-1043", records:2, lastSample:"Jun 14, 2026", status:"active", tags:["followup"]},
+  {name:"Tom Becker", patientId:"PT-1044", records:0, lastSample:"—", status:"inactive", tags:[]},
+];
+
+const patientHistory = {
+  "PT-1042": [ {sample:"Lipid Panel", status:"complete", date:"Jun 15, 2026"} ],
+  "PT-1043": [
+    {sample:"Blood Panel", status:"pending", date:"Jun 14, 2026"},
+    {sample:"Urine Culture", status:"complete", date:"Jun 10, 2026"}
+  ],
+  "PT-1044": []
+};
+
+const TAG_LABEL = {routine:"Routine", followup:"Follow-up needed", inactive:"Inactive"};
+const TAG_CLASS = {routine:"tag-routine", followup:"tag-followup", inactive:"tag-inactive"};
+
+const ICONS = {
+  pending:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>',
+  progress:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-9-9"/></svg>',
+  complete:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg>',
+  link:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.5.4l2-2a5 5 0 0 0-7-7l-1.2 1.1"/><path d="M14 11a5 5 0 0 0-7.5-.4l-2 2a5 5 0 0 0 7 7l1.1-1.2"/></svg>',
+  dash:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/></svg>',
+  copy:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="11" height="11" rx="1.5"/><path d="M5 15V5a1.5 1.5 0 0 1 1.5-1.5H15"/></svg>'
+};
+const STATUS_LABEL = {pending:"Pending", progress:"In Progress", complete:"Completed"};
+
+/* ---------------- Page switching ---------------- */
+function switchPage(name){
+  document.querySelectorAll('.nav-item').forEach(item=>item.classList.toggle('active', item.dataset.page===name));
+  document.querySelectorAll('.page').forEach(p=>p.classList.toggle('active', p.dataset.page===name));
+}
+
+/* ---------------- Profile modal ---------------- */
+function openProfileModal(){
+  document.getElementById('profile-modal').classList.add('active');
+}
+function closeProfileModal(){
+  document.getElementById('profile-modal').classList.remove('active');
+}
+document.addEventListener('keydown', e=>{
+  if(e.key === 'Escape'){ closeProfileModal(); closePatientModal(); }
+});
+
+/* ---------------- Dashboard table ---------------- */
+function initials(name){ return name.replace("Dr. ","").split(" ").map(p=>p[0]).join("").slice(0,2).toUpperCase(); }
+
+function renderRecords(list){
+  const body = document.getElementById('records-body');
+  body.innerHTML = list.map(r => `
+    <tr>
+      <td><div class="id-cell"><span class="id-code" title="${r.id}">${r.id.slice(0,8)}…</span>
+        <button class="copy-btn" data-id="${r.id}" aria-label="Copy full ID">${ICONS.copy}</button></div></td>
+      <td>${r.sample}</td>
+      <td>${r.patient ? `<span class="patient-linked">${ICONS.link}${r.patient}</span>` : `<span class="patient-unlinked">${ICONS.dash}Not linked</span>`}</td>
+      <td><div class="operator-cell"><span class="op-avatar">${initials(r.operator)}</span>${r.operator}</div></td>
+      <td><span class="status-pill status-${r.status}">${ICONS[r.status]}${STATUS_LABEL[r.status]}</span></td>
+      <td class="date-cell">${r.date}</td>
+    </tr>`).join('');
+
+  body.querySelectorAll('.copy-btn').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      navigator.clipboard?.writeText(btn.getAttribute('data-id')).catch(()=>{});
+      const original = btn.innerHTML;
+      btn.innerHTML = ICONS.complete;
+      setTimeout(()=>btn.innerHTML = original, 1000);
+    });
+  });
+}
+
+function updateDashboardStats(list){
+  const total = list.length;
+  const open = list.filter(r=>r.status==="pending"||r.status==="progress").length;
+  const complete = list.filter(r=>r.status==="complete").length;
+  document.getElementById('stat-total').textContent = total;
+  document.getElementById('stat-open').textContent = open;
+  document.getElementById('entry-count').textContent = `${total} ${total===1?'entry':'entries'}`;
+  const cEl = document.getElementById('stat-compliance'), cFoot = document.getElementById('compliance-foot');
+  if(total===0){ cEl.textContent="No data yet"; cEl.classList.add('empty'); cFoot.textContent="Register a record to begin tracking"; }
+  else if(complete===0){ cEl.textContent="No data yet"; cEl.classList.add('empty'); cFoot.textContent="No records completed yet"; }
+  else { cEl.classList.remove('empty'); cEl.textContent=((complete/total)*100).toFixed(1)+"%"; cFoot.textContent=`${complete} of ${total} records completed`; }
+}
+
+/* ---------------- Needs Attention ---------------- */
+const ICON_ALERT = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v6M12 16.5v.01"/></svg>';
+function renderAttention(){
+  const el = document.getElementById('attention-list');
+  const today = "Jun 17, 2026";
+  const flagged = records.filter(r => r.status === "pending" && r.date !== today);
+  if(flagged.length === 0){
+    el.innerHTML = `<div class="empty-state">${ICONS.complete}<p>All caught up — nothing overdue</p></div>`;
+    return;
+  }
+  el.innerHTML = flagged.map(r => `
+    <div class="attention-row">
+      <div class="attention-icon">${ICON_ALERT}</div>
+      <div class="attention-text"><strong>${r.sample}</strong><p>${r.operator} · pending since ${r.date}</p></div>
+      <button class="btn-ghost">Escalate</button>
+    </div>`).join('');
+}
+
+/* ---------------- Workload by Operator ---------------- */
+function renderWorkload(){
+  const counts = {};
+  records.filter(r=>r.status==="pending"||r.status==="progress").forEach(r=>{
+    counts[r.operator] = (counts[r.operator]||0) + 1;
+  });
+  const items = Object.entries(counts).map(([label,count])=>({label,count}));
+  const max = Math.max(...items.map(i=>i.count), 1);
+  document.getElementById('workload-bars').innerHTML = items.map(i => `
+    <div class="bar-row">
+      <span class="bar-label">${i.label}</span>
+      <div class="bar-track"><div class="bar-fill" style="background:var(--accent-violet);width:${(i.count/max*100)}%"></div></div>
+      <span class="bar-count">${i.count}</span>
+    </div>`).join('');
+}
+
+/* ---------------- Recent Activity feed ---------------- */
+const activityLog = [
+  {actor:"Mark Rivera", action:"registered", target:"Urine Culture", time:"Jun 17, 7:55 AM", icon:"plus", color:"var(--accent-teal)"},
+  {actor:"Lisa Park", action:"moved to In Progress", target:"Tissue Biopsy", time:"Jun 16, 3:15 PM", icon:"progress", color:"var(--accent-violet)"},
+  {actor:"Mark Rivera", action:"registered", target:"Blood Panel", time:"Jun 16, 9:02 AM", icon:"plus", color:"var(--accent-teal)"},
+  {actor:"Dr. Sarah Chen", action:"registered", target:"Tissue Biopsy", time:"Jun 16, 8:40 AM", icon:"plus", color:"var(--accent-teal)"},
+  {actor:"Lisa Park", action:"marked Completed", target:"Lipid Panel", time:"Jun 15, 10:42 AM", icon:"complete", color:"var(--accent-green)"},
+];
+const ACTIVITY_ICON = {
+  plus:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>',
+  progress: ICONS.progress,
+  complete: ICONS.complete
+};
+function renderActivityFeed(){
+  document.getElementById('activity-feed').innerHTML = activityLog.map(a => `
+    <li class="activity-item">
+      <div class="activity-line"></div>
+      <div class="activity-icon" style="color:${a.color}">${ACTIVITY_ICON[a.icon]}</div>
+      <div>
+        <div class="activity-text"><strong>${a.actor}</strong> ${a.action} <strong>${a.target}</strong></div>
+        <div class="activity-time">${a.time}</div>
+      </div>
+    </li>`).join('');
+}
+
+renderRecords(records);
+updateDashboardStats(records);
+renderAttention();
+renderWorkload();
+renderActivityFeed();
+
+document.getElementById('search-records').addEventListener('input', e=>{
+  const q = e.target.value.toLowerCase().trim();
+  const filtered = records.filter(r => r.sample.toLowerCase().includes(q) || r.operator.toLowerCase().includes(q) || (r.patient||"").toLowerCase().includes(q) || r.id.toLowerCase().includes(q));
+  renderRecords(filtered);
+  document.getElementById('entry-count').textContent = `${filtered.length} ${filtered.length===1?'entry':'entries'}`;
+});
+
+/* ---------------- Patients table ---------------- */
+let patientFilter = "all";
+let patientSearch = "";
+
+function getFilteredPatients(){
+  return patients.filter(p => {
+    if(patientFilter === "active" && p.status !== "active") return false;
+    if(patientFilter === "inactive" && p.status !== "inactive") return false;
+    if(patientFilter === "unlinked" && p.records !== 0) return false;
+    const q = patientSearch;
+    if(q && !(p.name.toLowerCase().includes(q) || p.patientId.toLowerCase().includes(q))) return false;
+    return true;
+  });
+}
+
+function renderPatients(list){
+  const body = document.getElementById('patients-body');
+  body.innerHTML = list.map(p => `
+    <tr class="clickable-row" data-patient-id="${p.patientId}">
+      <td><div class="operator-cell"><span class="op-avatar">${initials(p.name)}</span>${p.name}</div></td>
+      <td><span class="id-code">${p.patientId}</span></td>
+      <td>${p.tags.length ? p.tags.map(t=>`<span class="tag-pill ${TAG_CLASS[t]}">${TAG_LABEL[t]}</span>`).join('') : '<span class="patient-unlinked" style="font-size:11px;">—</span>'}</td>
+      <td>${p.records}</td>
+      <td class="date-cell">${p.lastSample}</td>
+      <td><span class="status-pill status-${p.status}">${p.status==="active"?ICONS.complete:ICONS.dash}${p.status==="active"?"Active":"Inactive"}</span></td>
+    </tr>`).join('');
+  document.getElementById('patient-count').textContent = `${list.length} ${list.length===1?'entry':'entries'}`;
+
+  body.querySelectorAll('.clickable-row').forEach(row=>{
+    row.addEventListener('click', ()=> openPatientModal(row.getAttribute('data-patient-id')));
+  });
+}
+
+function refreshPatients(){ renderPatients(getFilteredPatients()); }
+refreshPatients();
+
+document.getElementById('search-patients').addEventListener('input', e=>{
+  patientSearch = e.target.value.toLowerCase().trim();
+  refreshPatients();
+});
+document.getElementById('patient-filters').querySelectorAll('.filter-chip').forEach(chip=>{
+  chip.addEventListener('click', ()=>{
+    document.querySelectorAll('#patient-filters .filter-chip').forEach(c=>c.classList.remove('active'));
+    chip.classList.add('active');
+    patientFilter = chip.getAttribute('data-filter');
+    refreshPatients();
+  });
+});
+
+/* ---------------- Patient detail modal ---------------- */
+function openPatientModal(patientId){
+  const p = patients.find(x => x.patientId === patientId);
+  if(!p) return;
+  document.getElementById('pm-avatar').textContent = initials(p.name);
+  document.getElementById('pm-name').textContent = p.name;
+  document.getElementById('pm-id').textContent = `${p.patientId} · ${p.status === "active" ? "Active" : "Inactive"}`;
+  document.getElementById('pm-tags').innerHTML = p.tags.length
+    ? p.tags.map(t=>`<span class="tag-pill ${TAG_CLASS[t]}">${TAG_LABEL[t]}</span>`).join('')
+    : `<span style="font-size:12px;color:var(--text-faint);">No tags</span>`;
+  const history = patientHistory[p.patientId] || [];
+  document.getElementById('pm-history').innerHTML = history.length
+    ? history.map(h => `
+        <div class="history-row">
+          <span>${h.sample}</span>
+          <span style="display:flex;align-items:center;gap:14px;">
+            <span class="status-pill status-${h.status}">${ICONS[h.status]}${STATUS_LABEL[h.status]}</span>
+            <span class="date-cell">${h.date}</span>
+          </span>
+        </div>`).join('')
+    : `<div class="empty-state" style="padding:18px 10px;">${ICONS.dash}<p>No sample records yet</p></div>`;
+  document.getElementById('patient-modal').classList.add('active');
+}
+function closePatientModal(){
+  document.getElementById('patient-modal').classList.remove('active');
+}
+
+/* ---------------- Analytics: chart helpers ---------------- */
+function buildLinePoints(values){
+  const padX=20, top=20, bottom=140, usableW=600-2*padX, usableH=bottom-top;
+  const max=Math.max(...values), min=Math.min(...values);
+  const range=(max-min)||1;
+  const n=values.length, stepX = n>1 ? usableW/(n-1) : 0;
+  return values.map((v,i)=>({x:+(padX+i*stepX).toFixed(1), y:+(bottom-((v-min)/range)*usableH).toFixed(1)}));
+}
+function renderLineChart(containerId, values, labels, colorHex){
+  const points = buildLinePoints(values);
+  const gradId = `grad-${containerId}`;
+  const linePath = "M" + points.map(p=>`${p.x},${p.y}`).join(" L");
+  const areaPath = linePath + ` L${points[points.length-1].x},140 L${points[0].x},140 Z`;
+  const dots = points.map(p=>`<circle cx="${p.x}" cy="${p.y}" r="3.5"/>`).join('');
+  const axisLabels = points.map((p,i)=>`<text x="${p.x}" y="160">${labels[i]}</text>`).join('');
+  document.getElementById(containerId).innerHTML = `
+    <svg viewBox="0 0 600 170" preserveAspectRatio="none">
+      <defs><linearGradient id="${gradId}" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="${colorHex}" stop-opacity="0.35"/>
+        <stop offset="100%" stop-color="${colorHex}" stop-opacity="0"/>
+      </linearGradient></defs>
+      <path d="${areaPath}" fill="url(#${gradId})"/>
+      <path d="${linePath}" fill="none" stroke="${colorHex}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+      <g fill="${colorHex}">${dots}</g>
+      <g class="axis-label" text-anchor="middle">${axisLabels}</g>
+    </svg>`;
+}
+function renderBars(containerId, items, colorOverride){
+  const max = Math.max(...items.map(i=>i.count), 1);
+  document.getElementById(containerId).innerHTML = items.map(i => `
+    <div class="bar-row">
+      <span class="bar-label">${i.label}</span>
+      <div class="bar-track"><div class="bar-fill" style="background:${i.color || colorOverride};width:${(i.count/max*100)}%"></div></div>
+      <span class="bar-count">${i.count}</span>
+    </div>`).join('');
+}
+function renderDonut(domId, legendId, items){
+  const filtered = items.filter(i=>i.count>0);
+  const total = filtered.reduce((a,i)=>a+i.count,0) || 1;
+  let acc = 0;
+  const stops = filtered.map(i=>{
+    const start = acc/total*360; acc += i.count; const end = acc/total*360;
+    return `${i.color} ${start}deg ${end}deg`;
+  }).join(', ');
+  document.getElementById(domId).style.background = `conic-gradient(${stops})`;
+  document.getElementById(legendId).innerHTML = filtered.map(i => `
+    <div class="legend-item"><span class="legend-dot" style="background:${i.color}"></span>${i.label}<strong>${i.count}</strong></div>`).join('');
+}
+
+/* ---------------- Analytics: range datasets ---------------- */
+const analyticsData = {
+  "7": {
+    rangeTitle:"Last 7 Days", turnaround:"1.8", turnaroundFoot:"Receipt to result, last 7 days",
+    recordsPeriod:5, complianceText:"20.0%", complianceFoot:"1 of 5 records completed",
+    activityLabels:["Jun 11","Jun 12","Jun 13","Jun 14","Jun 15","Jun 16","Jun 17"],
+    activityValues:[2,3,1,4,2,5,3],
+    turnaroundLabels:["Jun 11","Jun 12","Jun 13","Jun 14","Jun 15","Jun 16","Jun 17"],
+    turnaroundValues:[2.4,2.2,2.0,2.1,1.9,1.7,1.8],
+    statusCounts:[{label:"Pending",count:3,color:"var(--accent-amber)"},{label:"In Progress",count:1,color:"var(--accent-violet)"},{label:"Completed",count:1,color:"var(--accent-green)"}],
+    sampleTypes:[{label:"Tissue Biopsy",count:2,color:"#8B93F8"},{label:"Urine Culture",count:1,color:"#4FD8C4"},{label:"Blood Panel",count:1,color:"#F2A65A"},{label:"Lipid Panel",count:1,color:"#5BD88A"}],
+    operators:[{label:"Mark Rivera",count:2},{label:"Dr. Sarah Chen",count:1},{label:"Lisa Park",count:2}]
+  },
+  "30": {
+    rangeTitle:"Last 30 Days", turnaround:"2.0", turnaroundFoot:"Receipt to result, last 30 days",
+    recordsPeriod:64, complianceText:"76.5%", complianceFoot:"49 of 64 records completed",
+    activityLabels:["May 19","May 26","Jun 2","Jun 9","Jun 16"],
+    activityValues:[9,14,11,17,13],
+    turnaroundLabels:["May 19","May 26","Jun 2","Jun 9","Jun 16"],
+    turnaroundValues:[2.6,2.3,2.1,2.0,1.8],
+    statusCounts:[{label:"Pending",count:9,color:"var(--accent-amber)"},{label:"In Progress",count:6,color:"var(--accent-violet)"},{label:"Completed",count:49,color:"var(--accent-green)"}],
+    sampleTypes:[{label:"Tissue Biopsy",count:18,color:"#8B93F8"},{label:"Urine Culture",count:15,color:"#4FD8C4"},{label:"Blood Panel",count:17,color:"#F2A65A"},{label:"Lipid Panel",count:14,color:"#5BD88A"}],
+    operators:[{label:"Mark Rivera",count:24},{label:"Dr. Sarah Chen",count:19},{label:"Lisa Park",count:21}]
+  },
+  "90": {
+    rangeTitle:"Last 90 Days", turnaround:"2.3", turnaroundFoot:"Receipt to result, last 90 days",
+    recordsPeriod:193, complianceText:"81.2%", complianceFoot:"172 of 193 records completed",
+    activityLabels:["Apr","May","Jun"],
+    activityValues:[58,71,64],
+    turnaroundLabels:["Apr","May","Jun"],
+    turnaroundValues:[2.8,2.3,1.9],
+    statusCounts:[{label:"Pending",count:12,color:"var(--accent-amber)"},{label:"In Progress",count:9,color:"var(--accent-violet)"},{label:"Completed",count:172,color:"var(--accent-green)"}],
+    sampleTypes:[{label:"Tissue Biopsy",count:52,color:"#8B93F8"},{label:"Urine Culture",count:47,color:"#4FD8C4"},{label:"Blood Panel",count:51,color:"#F2A65A"},{label:"Lipid Panel",count:43,color:"#5BD88A"}],
+    operators:[{label:"Mark Rivera",count:68},{label:"Dr. Sarah Chen",count:61},{label:"Lisa Park",count:64}]
+  }
+};
+
+function applyAnalyticsRange(key){
+  const d = analyticsData[key];
+  document.getElementById('an-turnaround').innerHTML = `${d.turnaround}<span style="font-size:15px;color:var(--text-muted);"> days</span>`;
+  document.getElementById('an-turnaround-foot').textContent = d.turnaroundFoot;
+  document.getElementById('an-records').textContent = d.recordsPeriod;
+  document.getElementById('an-records-label').textContent = key==="7" ? "Records This Week" : "Records This Period";
+  document.getElementById('an-compliance').textContent = d.complianceText;
+  document.getElementById('an-compliance-foot').textContent = d.complianceFoot;
+  document.getElementById('an-activity-title').textContent = `Activity — ${d.rangeTitle}`;
+  renderLineChart('activity-chart', d.activityValues, d.activityLabels, '#4FD8C4');
+  renderLineChart('turnaround-chart', d.turnaroundValues, d.turnaroundLabels, '#8B93F8');
+  renderBars('bar-chart', d.statusCounts);
+  renderDonut('donut','donut-legend', d.sampleTypes);
+  renderBars('operator-bars', d.operators, 'var(--accent-teal)');
+}
+
+document.getElementById('range-toggle').querySelectorAll('.range-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('#range-toggle .range-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    applyAnalyticsRange(btn.getAttribute('data-range'));
+  });
+});
+
+applyAnalyticsRange('7');
+</script>
+</body>
+</html>
